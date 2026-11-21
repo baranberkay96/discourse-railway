@@ -233,7 +233,7 @@
       "volume": {
         "mountPath": "/data"
       },
-      "startCommand": "/bin/sh -c 'exec docker-entrypoint.sh redis-server --bind \"0.0.0.0\" \"::\" --protected-mode yes --requirepass \"$REDIS_PASSWORD\" --appendonly yes --dir /data'"
+      "startCommand": "/bin/sh -c 'rmdir /data/lost+found 2>/dev/null || true; exec docker-entrypoint.sh redis-server --bind \"0.0.0.0\" \"::\" --protected-mode yes --requirepass \"$REDIS_PASSWORD\" --appendonly yes --dir /data'"
     }
   }
 }
