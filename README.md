@@ -1,5 +1,7 @@
 # Deploy and Host Discourse with Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/discourse-20267-community-forum-postgres?referralCode=20H68q)
+
 Discourse is an open-source community forum with searchable topics, categories,
 chat and moderation tools. This community package runs the Discourse application
 and Sidekiq together, with private PostgreSQL and Redis services. It creates the
