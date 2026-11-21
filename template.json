@@ -109,7 +109,7 @@
           "required": false
         },
         "DISCOURSE_SECRET_KEY_BASE": {
-          "defaultValue": "${{secret(64)}}",
+          "defaultValue": "${{secret(128,\"abcdef0123456789\")}}",
           "description": "Stable generated signing secret for application sessions",
           "required": false
         }

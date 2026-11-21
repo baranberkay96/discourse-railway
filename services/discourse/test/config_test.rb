@@ -5,23 +5,29 @@ require "tmpdir"
 require_relative "../railway-config"
 
 class RailwayConfigTest < Minitest::Test
-  def test_plugin_manifest_excludes_directories_without_a_plugin_entrypoint
+  def test_manifest_removes_resurrected_files_inside_existing_directories
     Dir.mktmpdir do |root|
-      FileUtils.mkdir_p([File.join(root, "current"), File.join(root, "blog")])
-      File.write(File.join(root, "current", "plugin.rb"), "# active plugin")
-      File.write(File.join(root, "blog", "old-assets.js"), "// retained assets")
-      assert_equal ["current"], RailwayConfig.plugin_names(root)
+      FileUtils.mkdir_p([File.join(root, "lib"), File.join(root, "plugins/blog")])
+      File.write(File.join(root, "plugins/blog", "assets.js"), "// current assets")
+      manifest = RailwayConfig.file_manifest(root)
+      File.write(File.join(root, "plugins/blog", "plugin.rb"), "raise :obsolete")
+      File.write(File.join(root, "lib", "html_to_markdown.rb"), "require 'removed_gem'")
+      assert_equal %w[lib/html_to_markdown.rb plugins/blog/plugin.rb], RailwayConfig.prune_tree(root, manifest).sort
+      assert File.file?(File.join(root, "plugins/blog/assets.js"))
     end
   end
 
-  def test_plugin_cleanup_preserves_build_plugins_and_external_symlink_targets
+  def test_manifest_cleanup_preserves_volume_symlinks_without_traversing_targets
     Dir.mktmpdir do |directory|
-      root = File.join(directory, "plugins")
+      root = File.join(directory, "app")
       outside = File.join(directory, "outside")
-      FileUtils.mkdir_p([File.join(root, "current"), File.join(root, "obsolete"), outside])
+      FileUtils.mkdir_p([File.join(root, "current"), outside])
+      File.symlink(outside, File.join(root, "log"))
+      manifest = RailwayConfig.file_manifest(root)
       File.write(File.join(outside, "keep"), "persistent")
+      FileUtils.mkdir_p(File.join(root, "obsolete"))
       File.symlink(outside, File.join(root, "stale-link"))
-      removed = RailwayConfig.prune_plugins(root, ["current"])
+      removed = RailwayConfig.prune_tree(root, manifest)
       assert_equal %w[obsolete stale-link], removed.sort
       assert File.directory?(File.join(root, "current"))
       refute File.exist?(File.join(root, "obsolete"))

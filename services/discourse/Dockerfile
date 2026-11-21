@@ -6,7 +6,7 @@ COPY --chmod=0755 zz-railway-bootstrap /etc/runit/1.d/zz-railway-bootstrap
 COPY --chmod=0755 railway-config.rb wait-for-data.rb bootstrap-admin.rb /opt/railway/
 RUN rm -f /etc/nginx/sites-enabled/default \
     && mkdir -p /var/log/nginx \
-    && ruby -r /opt/railway/railway-config -e 'puts RailwayConfig.plugin_names("/var/www/discourse/plugins")' > /opt/railway/plugins.list \
+    && ruby -r /opt/railway/railway-config -e 'puts RailwayConfig.file_manifest("/var/www/discourse")' > /opt/railway/application.list \
     && sed -i 's|proxy_set_header X-Forwarded-For $remote_addr;|proxy_set_header X-Forwarded-For $http_x_forwarded_for;|g' /etc/nginx/conf.d/discourse.conf \
     && nginx -t
 

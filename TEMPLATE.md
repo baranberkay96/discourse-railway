@@ -1,6 +1,6 @@
 # Discourse 2026.7 Community Forum (Postgres, Redis)
 
-Status: local package; not published. Checked 2026-11-21.
+Status: publication in progress; fresh Railway compatibility checks underway (2026-11-21).
 
 ## Listing
 
@@ -53,6 +53,15 @@ Sidekiq together; no unsupported shared volume is needed.
 | Discourse | `2026.7.6@sha256:f8a7a3c0f7e5ee6c66e3d8b24d55ba860ed8f7f265384aba81a3c440b008108a` | 2026-11-21 |
 | Railway Postgres | `18@sha256:4fc833b43d2aaf6ecc9b18615f5533602b723a32d0e2efe2dae8ca0f7217c863` (18.6) | 2026-11-21 |
 | Redis | `8.2@sha256:b0b01167ff47bc3868e56a967895a26be4230891a1f42a78ab61cdd227accc8d` (8.2.11) | 2026-11-21 |
+
+## Runtime compatibility
+
+The image records the exact application file tree at build time. Before boot,
+it removes obsolete image paths that Railway can restore from older layers.
+The traversal never follows volume symlinks, so uploads, backups and logs remain
+on their volumes. Keep the manifest capture after application or plugin changes
+in a fork. Redis removes only an empty lost+found directory before its official
+entrypoint repairs volume ownership. The session signing key is 128 hex digits.
 
 ## Composer instructions
 

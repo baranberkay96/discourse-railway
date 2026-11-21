@@ -2,23 +2,32 @@
 
 require "securerandom"
 require "fileutils"
+require "find"
+require "set"
 
 module RailwayConfig
-  def self.plugin_names(root)
-    Dir.children(root).select { |name| File.file?(File.join(root, name, "plugin.rb")) }.sort
+  def self.file_manifest(root)
+    Find.find(root).filter_map { |path| path.delete_prefix("#{root}/") unless path == root }.sort
   end
 
-  def self.prune_plugins(root, allowed)
-    Dir.children(root).filter_map do |name|
-      path = File.join(root, name)
-      next if allowed.include?(name) || (!File.directory?(path) && !File.symlink?(path))
-
-      # Some container runtimes resurrect directories deleted by earlier image
-      # layers. Remove only plugin entries absent from the build's exact list.
-      # rm_rf removes a symlink itself, never the target outside this tree.
-      FileUtils.rm_rf(path)
-      name
+  def self.prune_tree(root, manifest)
+    allowed = manifest.to_set
+    removed = []
+    visit = lambda do |directory|
+      Dir.children(directory).each do |name|
+        path = File.join(directory, name)
+        relative = path.delete_prefix("#{root}/")
+        if !allowed.include?(relative)
+          # Remove obsolete image files only. Never traverse volume symlinks.
+          FileUtils.rm_rf(path)
+          removed << relative
+        elsif File.directory?(path) && !File.symlink?(path)
+          visit.call(path)
+        end
+      end
     end
+    visit.call(root)
+    removed
   end
 
   HOSTNAME = /\A(?=.{1,253}\z)[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\z/i
@@ -69,11 +78,10 @@ module RailwayConfig
 end
 
 if $PROGRAM_NAME == __FILE__
-  plugin_list = "/opt/railway/plugins.list"
-  if File.file?(plugin_list)
-    RailwayConfig.prune_plugins("/var/www/discourse/plugins", File.readlines(plugin_list, chomp: true)).each do |name|
-      warn "railway: removed obsolete image-layer plugin #{name}"
-    end
+  manifest = "/opt/railway/application.list"
+  if File.file?(manifest)
+    removed = RailwayConfig.prune_tree("/var/www/discourse", File.readlines(manifest, chomp: true))
+    warn "railway: removed #{removed.length} obsolete image-layer paths" unless removed.empty?
   end
   normalized = RailwayConfig.normalize(ENV)
   ENV.delete("RAILWAY_ADMIN_LOCKED")
