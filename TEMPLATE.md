@@ -1,6 +1,6 @@
 # Discourse 2026.7 Community Forum (Postgres, Redis)
 
-Status: publication in progress; fresh Railway compatibility checks underway (2026-11-21).
+Status: PUBLISHED (2026-11-21). https://railway.com/deploy/discourse-20267-community-forum-postgres
 
 ## Listing
 
@@ -102,7 +102,7 @@ in `../../_reports/167-discourse-2026-11-21.md`.
 - [x] Web responds at `/srv/status`; Sidekiq registers with Redis.
 - [x] Post and image survive a forced container recreation on the same volumes.
 - [x] Invalid associated email and rejected-password integration regressions.
-- [ ] Railway live deploy, public client-IP headers and first login.
+- [x] Railway live deploy and HTTPS first login, admin API, public topic and image upload/read. Client-IP header details remain delegated to Railway edge behavior.
 - [ ] SMTP, signups and mail delivery (requires credentials and Pro).
 
 ## Open questions
@@ -110,5 +110,5 @@ in `../../_reports/167-discourse-2026-11-21.md`.
 - Discourse's upstream prebuilt image remains experimental; only its standard
   Docker launcher install receives official support.
 - Resource figures need real Railway measurements before a public listing.
-- Remote repository, marketplace publication and a post-publish deploy are not
-  part of the local verification evidence. Do not advertise a guessed deploy URL.
+- Published source and marketplace URL are verified. Real-ID functional checks
+  passed; see ../../_reports/publication-2026-11-21/167-discourse for full evidence.
