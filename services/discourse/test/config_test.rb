@@ -1,9 +1,25 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "tmpdir"
 require_relative "../railway-config"
 
 class RailwayConfigTest < Minitest::Test
+  def test_plugin_cleanup_preserves_build_plugins_and_external_symlink_targets
+    Dir.mktmpdir do |directory|
+      root = File.join(directory, "plugins")
+      outside = File.join(directory, "outside")
+      FileUtils.mkdir_p([File.join(root, "current"), File.join(root, "obsolete"), outside])
+      File.write(File.join(outside, "keep"), "persistent")
+      File.symlink(outside, File.join(root, "stale-link"))
+      removed = RailwayConfig.prune_plugins(root, ["current"])
+      assert_equal %w[obsolete stale-link], removed.sort
+      assert File.directory?(File.join(root, "current"))
+      refute File.exist?(File.join(root, "obsolete"))
+      assert_equal "persistent", File.read(File.join(outside, "keep"))
+    end
+  end
+
   def normalize(overrides = {})
     warnings = []
     input = {

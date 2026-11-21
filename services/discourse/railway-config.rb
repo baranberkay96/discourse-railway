@@ -1,8 +1,22 @@
 # frozen_string_literal: true
 
 require "securerandom"
+require "fileutils"
 
 module RailwayConfig
+  def self.prune_plugins(root, allowed)
+    Dir.children(root).filter_map do |name|
+      path = File.join(root, name)
+      next if allowed.include?(name) || (!File.directory?(path) && !File.symlink?(path))
+
+      # Some container runtimes resurrect directories deleted by earlier image
+      # layers. Remove only plugin entries absent from the build's exact list.
+      # rm_rf removes a symlink itself, never the target outside this tree.
+      FileUtils.rm_rf(path)
+      name
+    end
+  end
+
   HOSTNAME = /\A(?=.{1,253}\z)[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\z/i
   EMAIL = /\A[^\s@,]+@[^\s@,]+\.[^\s@,]+\z/
 
@@ -51,6 +65,12 @@ module RailwayConfig
 end
 
 if $PROGRAM_NAME == __FILE__
+  plugin_list = "/opt/railway/plugins.list"
+  if File.file?(plugin_list)
+    RailwayConfig.prune_plugins("/var/www/discourse/plugins", File.readlines(plugin_list, chomp: true)).each do |name|
+      warn "railway: removed obsolete image-layer plugin #{name}"
+    end
+  end
   normalized = RailwayConfig.normalize(ENV)
   ENV.delete("RAILWAY_ADMIN_LOCKED")
   ENV.update(normalized)
