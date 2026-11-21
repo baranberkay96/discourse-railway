@@ -1,0 +1,239 @@
+{
+  "name": "Discourse 2026.7 Community Forum (Postgres, Redis)",
+  "description": "Community forum with private Postgres, Redis and automatic admin login.",
+  "category": "CMS",
+  "tags": [
+    "discourse",
+    "forum",
+    "community",
+    "postgres",
+    "redis",
+    "sidekiq"
+  ],
+  "image": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/discourse.svg",
+  "services": {
+    "Discourse": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/discourse.svg",
+      "source": {
+        "repo": "baranberkay96/discourse-railway",
+        "rootDirectory": "/services/discourse"
+      },
+      "publicDomain": true,
+      "targetPort": 80,
+      "tcpProxy": null,
+      "healthcheckPath": "/srv/status",
+      "healthcheckTimeout": 1200,
+      "restartPolicyType": "ALWAYS",
+      "volume": {
+        "mountPath": "/shared"
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "80",
+          "description": "nginx and Railway healthcheck port; fixed by the startup wrapper",
+          "required": false
+        },
+        "DISCOURSE_HOSTNAME": {
+          "defaultValue": "${{RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "Public forum hostname without https://; update when adding a custom domain",
+          "required": false
+        },
+        "DISCOURSE_ADMIN_EMAIL": {
+          "defaultValue": "admin@example.com",
+          "description": "Initial owner email; change this to your own address before deploying",
+          "required": false
+        },
+        "DISCOURSE_ADMIN_PASSWORD": {
+          "defaultValue": "${{secret(32,\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Generated first-owner password; existing users are preserved on redeploy",
+          "required": false
+        },
+        "DISCOURSE_DB_HOST": {
+          "defaultValue": "${{Postgres.PGHOST}}",
+          "description": "Private Postgres hostname",
+          "required": false
+        },
+        "DISCOURSE_DB_PORT": {
+          "defaultValue": "${{Postgres.PGPORT}}",
+          "description": "Postgres port",
+          "required": false
+        },
+        "DISCOURSE_DB_NAME": {
+          "defaultValue": "${{Postgres.PGDATABASE}}",
+          "description": "Discourse database",
+          "required": false
+        },
+        "DISCOURSE_DB_USERNAME": {
+          "defaultValue": "${{Postgres.PGUSER}}",
+          "description": "Postgres username",
+          "required": false
+        },
+        "DISCOURSE_DB_PASSWORD": {
+          "defaultValue": "${{Postgres.PGPASSWORD}}",
+          "description": "Generated database password",
+          "required": false
+        },
+        "DISCOURSE_REDIS_HOST": {
+          "defaultValue": "${{Redis.REDISHOST}}",
+          "description": "Private Redis hostname",
+          "required": false
+        },
+        "DISCOURSE_REDIS_PORT": {
+          "defaultValue": "${{Redis.REDISPORT}}",
+          "description": "Redis port",
+          "required": false
+        },
+        "DISCOURSE_REDIS_PASSWORD": {
+          "defaultValue": "${{Redis.REDIS_PASSWORD}}",
+          "description": "Generated Redis password",
+          "required": false
+        },
+        "UNICORN_WORKERS": {
+          "defaultValue": "1",
+          "description": "Web workers (1\u20134); raise memory before increasing",
+          "required": false
+        },
+        "UNICORN_SIDEKIQS": {
+          "defaultValue": "1",
+          "description": "Background Sidekiq processes (1\u20132), sharing the app volume",
+          "required": false
+        },
+        "RAILWAY_FORCE_HTTPS": {
+          "defaultValue": "true",
+          "description": "Force HTTPS at Railway edge; false only for local HTTP tests",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "90",
+          "description": "Time for graceful worker and app shutdown",
+          "required": false
+        },
+        "DISCOURSE_SECRET_KEY_BASE": {
+          "defaultValue": "${{secret(64)}}",
+          "description": "Stable generated signing secret for application sessions",
+          "required": false
+        }
+      }
+    },
+    "Postgres": {
+      "icon": "https://devicons.railway.app/i/postgresql.svg",
+      "source": {
+        "repo": "baranberkay96/discourse-railway",
+        "rootDirectory": "/services/postgres"
+      },
+      "variables": {
+        "PGDATA": {
+          "defaultValue": "/var/lib/postgresql/data/pgdata",
+          "description": "Location where the database will be initialized",
+          "required": false
+        },
+        "PGHOST": {
+          "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "Railway Private Domain Name.",
+          "required": false
+        },
+        "PGPORT": {
+          "defaultValue": "5432",
+          "description": "Port to connect to Postgres.",
+          "required": false
+        },
+        "PGUSER": {
+          "defaultValue": "${{ POSTGRES_USER }}",
+          "description": "Required variable for Data panel",
+          "required": false
+        },
+        "PGDATABASE": {
+          "defaultValue": "${{POSTGRES_DB}}",
+          "description": "Required variable for the data panel.",
+          "required": false
+        },
+        "PGPASSWORD": {
+          "defaultValue": "${{POSTGRES_PASSWORD}}",
+          "description": "Required variable for Data panel",
+          "required": false
+        },
+        "POSTGRES_DB": {
+          "defaultValue": "discourse",
+          "description": "Default database created when image is started.",
+          "required": false
+        },
+        "DATABASE_URL": {
+          "defaultValue": "postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}",
+          "description": "URL to connect to Postgres database.",
+          "required": false
+        },
+        "POSTGRES_USER": {
+          "defaultValue": "postgres",
+          "description": "User to connect to Postgres DB",
+          "required": false
+        },
+        "SSL_CERT_DAYS": {
+          "defaultValue": "820",
+          "description": "SSL certificate expiry in days.",
+          "required": false
+        },
+        "POSTGRES_PASSWORD": {
+          "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+          "description": "Password to connect to DB",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "60",
+          "description": "Allow Postgres to cleanly shut down",
+          "required": false
+        }
+      },
+      "publicDomain": false,
+      "tcpProxy": null,
+      "restartPolicyType": "ALWAYS",
+      "volume": {
+        "mountPath": "/var/lib/postgresql/data"
+      }
+    },
+    "Redis": {
+      "icon": "https://cdn.sanity.io/images/sy1jschh/production/0ce0bfdcfbdbf69662b1116671f97c2dd788b655-157x157.svg",
+      "source": {
+        "image": "redis:8.2@sha256:b0b01167ff47bc3868e56a967895a26be4230891a1f42a78ab61cdd227accc8d"
+      },
+      "variables": {
+        "REDISHOST": {
+          "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "Private network hostname of the Redis service, only resolvable from services in the same environment",
+          "required": false
+        },
+        "REDISPORT": {
+          "defaultValue": "6379",
+          "description": "Port that Redis listens on",
+          "required": false
+        },
+        "REDISUSER": {
+          "defaultValue": "default",
+          "description": "Username for authenticating with Redis",
+          "required": false
+        },
+        "REDIS_URL": {
+          "defaultValue": "redis://${{ REDISUSER }}:${{ REDIS_PASSWORD }}@${{ REDISHOST }}:${{ REDISPORT }}",
+          "description": "Connection string for connecting to Redis using the private network",
+          "required": false
+        },
+        "REDISPASSWORD": {
+          "defaultValue": "${{REDIS_PASSWORD}}",
+          "description": "Alias of REDIS_PASSWORD for clients that expect the unseparated name",
+          "required": false
+        },
+        "REDIS_PASSWORD": {
+          "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+          "description": "Randomly generated password for authenticating with Redis",
+          "required": false
+        }
+      },
+      "publicDomain": false,
+      "tcpProxy": null,
+      "restartPolicyType": "ALWAYS",
+      "volume": {
+        "mountPath": "/data"
+      },
+      "startCommand": "/bin/sh -c 'exec docker-entrypoint.sh redis-server --bind \"0.0.0.0\" \"::\" --protected-mode yes --requirepass \"$REDIS_PASSWORD\" --appendonly yes --dir /data'"
+    }
+  }
+}

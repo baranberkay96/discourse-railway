@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+cd /var/www/discourse
+
+# This runit phase runs before nginx or Rails can accept requests. The official
+# 00-ensure-links and copy-env hooks have already prepared the mounted volume.
+rm -f /etc/nginx/sites-enabled/default
+echo "railway: waiting for private Postgres and Redis"
+ready=false
+for attempt in $(seq 1 180); do
+  if timeout 10 su -p discourse -c 'cd /var/www/discourse && bundle exec ruby /opt/railway/wait-for-data.rb'; then
+    ready=true
+    break
+  fi
+  sleep 3
+done
+if [ "$ready" != true ]; then
+  echo "railway: data services are not ready; Railway will retry startup" >&2
+  exit 1
+fi
+
+echo "railway: running database migrations before opening the forum"
+su -p discourse -c 'cd /var/www/discourse && bundle exec rake db:migrate'
+su -p discourse -c 'cd /var/www/discourse && bundle exec rails runner /opt/railway/bootstrap-admin.rb'
+echo "railway: setup complete; starting web and background workers"

@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: local/discourse-postgres:18
+    platform: linux/amd64
+    environment:
+      POSTGRES_DB: discourse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${SMOKE_DB_PASSWORD:?}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:8.2
+    platform: linux/amd64
+    command: /bin/sh -c 'exec redis-server --bind "0.0.0.0" "::" --requirepass "$$REDIS_PASSWORD" --appendonly yes'
+    environment:
+      REDIS_PASSWORD: ${SMOKE_REDIS_PASSWORD:?}
+    volumes:
+      - redisdata:/data
+  discourse:
+    image: local/discourse-railway:2026.7.6
+    platform: linux/amd64
+    init: true
+    mem_limit: 2g
+    ports:
+      - 127.0.0.1:18767:80
+    environment:
+      DISCOURSE_ADMIN_EMAIL: owner@example.org
+      DISCOURSE_ADMIN_PASSWORD: ${SMOKE_ADMIN_PASSWORD:?}
+      DISCOURSE_HOSTNAME: localhost
+      RAILWAY_FORCE_HTTPS: "false"
+      UNICORN_WORKERS: "1"
+      UNICORN_SIDEKIQS: "1"
+      DISCOURSE_DB_HOST: postgres
+      DISCOURSE_DB_PORT: "5432"
+      DISCOURSE_DB_NAME: discourse
+      DISCOURSE_DB_USERNAME: postgres
+      DISCOURSE_DB_PASSWORD: ${SMOKE_DB_PASSWORD:?}
+      DISCOURSE_REDIS_HOST: redis
+      DISCOURSE_REDIS_PORT: "6379"
+      DISCOURSE_REDIS_PASSWORD: ${SMOKE_REDIS_PASSWORD:?}
+    volumes:
+      - type: volume
+        source: content
+        target: /shared
+        volume:
+          nocopy: true
+volumes:
+  pgdata:
+  redisdata:
+  content:
