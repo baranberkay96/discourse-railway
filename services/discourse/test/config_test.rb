@@ -5,6 +5,15 @@ require "tmpdir"
 require_relative "../railway-config"
 
 class RailwayConfigTest < Minitest::Test
+  def test_plugin_manifest_excludes_directories_without_a_plugin_entrypoint
+    Dir.mktmpdir do |root|
+      FileUtils.mkdir_p([File.join(root, "current"), File.join(root, "blog")])
+      File.write(File.join(root, "current", "plugin.rb"), "# active plugin")
+      File.write(File.join(root, "blog", "old-assets.js"), "// retained assets")
+      assert_equal ["current"], RailwayConfig.plugin_names(root)
+    end
+  end
+
   def test_plugin_cleanup_preserves_build_plugins_and_external_symlink_targets
     Dir.mktmpdir do |directory|
       root = File.join(directory, "plugins")

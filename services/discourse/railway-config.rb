@@ -4,6 +4,10 @@ require "securerandom"
 require "fileutils"
 
 module RailwayConfig
+  def self.plugin_names(root)
+    Dir.children(root).select { |name| File.file?(File.join(root, name, "plugin.rb")) }.sort
+  end
+
   def self.prune_plugins(root, allowed)
     Dir.children(root).filter_map do |name|
       path = File.join(root, name)
